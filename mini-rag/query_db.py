@@ -39,13 +39,8 @@ chain = ConversationalRetrievalChain.from_llm(llm,
                                               memory=memory
 )
 
-while True:
-    user_input = input("You: ")
-    if user_input.lower() == "exit":
-        print("Chatbot: Thanks!")
-        break
-    result = chain.invoke({"question": user_input})
+def QuesAns(question):
+    result = chain.invoke({"question": question})
+    answer = f"You: {question}\nChatbot: {result["answer"]}"
+    return answer
 
-    response = result["answer"]
-
-    print("Chatbot:", response)

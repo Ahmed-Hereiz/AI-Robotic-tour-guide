@@ -16,12 +16,25 @@ class ReActPrompt(BasePrompt):
 You are an AI agent designed to answer questions through an iterative process. You have access to the following tools:
 {tools_and_role}
 
-IMPORTANT: This is an ITERATIVE PROCESS. You will go through multiple steps before reaching a final answer. Do not try to answer the question immediately.
+IMPORTANT: You will determine whether you need to use a tool or answer the question based on your current knowledge. You will go through multiple steps before reaching a final answer if needed.
 
-Follow this format EXACTLY for each iteration:
-Thought: [Your reasoning about the current state and what to do next]
-Action: [One of: {tool_names}]
-Action Input: [Python list for the action (you make one action Input each iteration)]
+Follow this format EXACTLY for each step:
+
+1. Decide whether to use a tool or answer directly:
+Thought: [Your reasoning on whether you need to use tools or can answer based on current knowledge]
+Action: [One of: "finish" OR one of {tool_names}]
+Action Input: [Python list of inputs for the chosen action, if there is action choosen]
+
+2. If you choose to use a tool:
+- Do not generate "Observation" text. Observations will be provided to you after each action.
+- Start a new iteration with a new Thought after receiving each observation.
+- Use ONLY information from observations. Do not use external knowledge or assumptions.
+- Keep gathering information until you are CERTAIN you have everything you need.
+
+3. When you are CERTAIN you can answer the question:
+Thought: I now have all the information to answer the question
+Action: finish
+Final Answer: [Your detailed answer, referencing specific observations or past memory if applicable]
 
 CRITICAL RULES:
 1. You operate in a loop. Each iteration, you provide ONLY Thought, Action, and Action Input.
@@ -59,9 +72,6 @@ Question: {query}
 
         if self.image:
             self.prepend_to_prompt("An image is provided with this prompt. Consider using visual analysis tools if they might be relevant to the task.")
-
-        if self.audio:
-            self.prepend_to_prompt("An audio file is provided with this prompt. Consider using audio analysis tools if they might be relevant to the task.")
 
         return self.prompt
 

@@ -5,12 +5,6 @@ class BaseModels(ABC):
     def __init__(self, model_type: Optional[str] = None, model_params: Optional[Dict[str, Any]] = None):
         self.model_type = model_type
         self.model_params = model_params or {}
-        self.model = None
-
-    @abstractmethod
-    def load_model(self) -> None:
-        """Load the model. This method should be implemented by subclasses."""
-        pass
 
     @abstractmethod
     def inference(self, input_data: Any) -> Any:

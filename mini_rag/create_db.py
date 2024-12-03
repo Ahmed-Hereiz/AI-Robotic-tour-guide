@@ -1,10 +1,18 @@
-# from langchain_community.document_loaders import DirectoryLoader
+import google.generativeai as genai
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import Chroma
 import os
 import shutil
+import json
+
+# Load config and set up API key
+with open("../config/llm.json", "r") as f:
+    llm_config = json.load(f)
+
+GOOGLE_API_KEY = llm_config["api_key"]
+genai.configure(api_key=GOOGLE_API_KEY)
 
 # paths for database and files
 CHROMA_PATH = "chroma"
@@ -33,10 +41,17 @@ print(document.metadata)
 if os.path.exists(CHROMA_PATH):
     shutil.rmtree(CHROMA_PATH)
 
-# create a new DB from the documents.
-db = Chroma.from_documents(
-    chunks, HuggingFaceEmbeddings(), 
-    persist_directory=CHROMA_PATH
+# Set up embedding model
+embedding_model = GoogleGenerativeAIEmbeddings(
+    model="models/embedding-001",
+    google_api_key=GOOGLE_API_KEY,
 )
+
+# create a new DB from the documents.
+db = Chroma(
+    persist_directory=CHROMA_PATH,
+    embedding_function=embedding_model
+)
+db.add_documents(chunks)
 db.persist()
 print(f"Saved {len(chunks)} chunks to {CHROMA_PATH}.")

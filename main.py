@@ -42,13 +42,9 @@ async def refine_scripts(user_input: UserInput):
                 script = file.read()
                 prompt.construct_prompt(placeholder_dict={"{script}": script, "{description}": description})
                 new_script = offline_agent.loop()
-                output_dict[filename] = new_script 
+                output_dict[filename] = new_script
 
-    with open('output_scripts.txt', 'w') as output_file:
-        for filename, script in output_dict.items():
-            output_file.write(f"{filename}:\n{script}\n-*100\n")
-    
-    return {"message": "Scripts refined successfully", "output_files": list(output_dict.keys())}
+    return output_dict
 
 
 @app.post("/audio_interface/")
@@ -73,11 +69,3 @@ async def audio_interface(audio_path: AudioPath):
 if __name__ == "__main__": 
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
-
-# curl -X POST "http://localhost:8000/refine-scripts/" \
-# -H "Content-Type: application/json" \
-# -d '{"description": "change this to arabic for young childeren tour"}'
-#
-# curl -X POST "http://localhost:8000/audio_interface/" \
-# -H "Content-Type: application/json" \
-# -d '{"path": "/home/ahmed-hereiz/self/Robotic-tour-guide/demo.mp3"}'

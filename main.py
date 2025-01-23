@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, UploadFile
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from customAgents.agent_llm import SimpleStreamLLM, BaseLLM
 from customAgents.agent_prompt import SimplePrompt, ReActPrompt
@@ -10,6 +10,8 @@ import json
 import os
 import uvicorn  
 from gtts import gTTS
+import uuid
+import base64
 
 app = FastAPI()
 
@@ -54,14 +56,49 @@ async def refine_scripts(user_input: UserInput):
         tts = gTTS(text=script, lang='en')
         tts.save(audio_path)
 
+    print("Audio should be sent through the api")
+
     return output_dict
+
+@app.post("/get_audio_files/")
+async def get_audio_files():
+    if not os.path.exists('output_aud'):
+        raise HTTPException(status_code=404, detail="No audio files directory found")
+    
+    audio_files = [f for f in os.listdir('output_aud') if f.endswith('.mp3')]
+    
+    if not audio_files:
+        raise HTTPException(status_code=404, detail="No audio files found")
+
+    response = {}
+    
+    for audio_file in audio_files:
+        file_path = os.path.join('output_aud', audio_file)
+        with open(file_path, 'rb') as f:
+            audio_bytes = f.read()
+            audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
+            response[audio_file] = audio_b64
+
+    return response
 
 
 @app.post("/audio_interface/")
-async def audio_interface(audio_file: UploadFile):
+async def audio_interface(audio_file: UploadFile = File(...)):
+    
     text = """You are a helpful assistant, you are guide robot to help users. you have tools and you run in a loop don't use the tools use it only if you needed but if you know the answer just answer dircetly"""
     multi_modal = AudioMultiModal(api_key=llm_config['api_key'], model=llm_config['model'], temperature=0.7)
-    audio_response = multi_modal.multimodal_generate(prompt="transcript what is here ", audio_file=await audio_file.read())
+    
+    # Create temp directory if it doesn't exist
+    os.makedirs("temp", exist_ok=True)
+    
+    # Save uploaded file to temp directory with unique name
+    temp_input_audio = os.path.join("temp", f"input_{uuid.uuid4()}.mp3")
+    audio_bytes = await audio_file.read()
+    with open(temp_input_audio, "wb") as f:
+        f.write(audio_bytes)
+    
+    audio_response = multi_modal.multimodal_generate(prompt="transcript what is here ", audio_file_path=temp_input_audio)
+    os.remove(temp_input_audio)
 
     llm = MainLLM(api_key=llm_config["api_key"], model=llm_config["model"], temperature=0.7)
     prompt = ReActPrompt(text=text)
@@ -74,8 +111,9 @@ async def audio_interface(audio_file: UploadFile):
     agent = ReActRuntime(llm=llm, prompt=prompt, toolkit=toolkit)
     output = agent.loop(agent_max_steps=10, verbose_tools=True)
     
+    # Generate response audio with unique name
+    temp_audio_file = os.path.join("temp", f"response_{uuid.uuid4()}.mp3")
     tts = gTTS(output, lang='en')
-    temp_audio_file = "temp_response.mp3"
     tts.save(temp_audio_file)
     
     with open(temp_audio_file, "rb") as audio:
@@ -83,7 +121,9 @@ async def audio_interface(audio_file: UploadFile):
     
     os.remove(temp_audio_file)
     
-    return {"audio_response": audio_bytes}
+    audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
+    
+    return {"audio_response": audio_b64}
 
 @app.post("/text_interface/")
 async def text_interface(user_input: UserInput):
@@ -108,25 +148,3 @@ async def clear_memory():
 
 if __name__ == "__main__": 
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
-"""
-# Test audio interface endpoint
-# Replace audio.mp3 with your actual audio file
-curl -X POST \
-  http://localhost:8000/audio_interface/ \
-  -H "Content-Type: multipart/form-data" \
-  -F "audio_file=@audio.mp3" \
-  --output response.mp3
-
-# Test text interface endpoint
-curl -X POST \
-  http://localhost:8000/text_interface/ \
-  -H "Content-Type: application/json" \
-  -d '{"description": "What can you help me with?"}'
-
-# Test refine script endpoint
-curl -X POST "http://localhost:8000/refine-scripts/" \
--H "Content-Type: application/json" \
--d '{"description": "change this for young childeren tour"}'
-
-"""

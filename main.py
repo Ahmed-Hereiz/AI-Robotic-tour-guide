@@ -79,6 +79,8 @@ async def get_audio_files():
             audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
             response[audio_file] = audio_b64
 
+    print("audio files should be sent...")
+
     return response
 
 

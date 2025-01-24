@@ -1,7 +1,25 @@
-curl -X POST "http://localhost:8000/refine-scripts/" \
--H "Content-Type: application/json" \
--d '{"description": "change this to arabic for young childeren tour"}'
+# Test refine-scripts endpoint
+curl -X POST http://localhost:8000/refine-scripts/ \
+  -H "Content-Type: application/json" \
+  -d '{"description": "make it for kids"}'
 
-curl -X POST "http://localhost:8000/audio_interface/" \
--H "Content-Type: application/json" \
--d '{"path": "/home/ahmed-hereiz/self/Robotic-tour-guide/demo.mp3"}'
+
+# Test get_audio_files endpoint
+curl -X POST http://localhost:8000/get_audio_files/
+
+
+# Test audio_interface endpoint
+curl -X POST http://localhost:8000/audio_interface/ \
+  -H "Content-Type: multipart/form-data" \
+  -F "audio_file=@/home/ahmed-hereiz/self/Robotic-tour-guide/demo.mp3"
+
+
+# Test text_interface endpoint
+curl -X POST http://localhost:8000/text_interface/ \
+  -H "Content-Type: application/json" \
+  -d '{"description": "hello"}'
+
+
+# Test clear_memory endpoint
+curl -X POST http://localhost:8000/clear_memory/
+

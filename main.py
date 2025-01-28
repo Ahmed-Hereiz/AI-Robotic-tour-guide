@@ -87,7 +87,7 @@ async def get_audio_files():
 @app.post("/audio_interface/")
 async def audio_interface(audio_file: UploadFile = File(...)):
     
-    text = """You are a helpful assistant, you are guide robot to help users. you have tools and you run in a loop don't use the tools use it only if you needed but if you know the answer just answer dircetly"""
+    text = """You are a helpful assistant, you are guide robot to help users. you have tools and you run in a loop don't use the tools use it only if you needed but if you know the answer just answer dircetly, NOTE Always give answer to the user either using the RAG or your base knowledge don't ever say you don't you have to always give answer for the user in the language he talked to you with"""
     multi_modal = AudioMultiModal(api_key=llm_config['api_key'], model=llm_config['model'], temperature=0.7)
     
     # Create temp directory if it doesn't exist
@@ -129,7 +129,7 @@ async def audio_interface(audio_file: UploadFile = File(...)):
 
 @app.post("/text_interface/")
 async def text_interface(user_input: UserInput):
-    text = """You are a helpful assistant, you are guide robot to help users. you have tools and you run in a loop don't use the tools use it only if you needed but if you know the answer just answer dircetly"""
+    text = """You are a helpful assistant, you are guide robot to help users. you have tools and you run in a loop don't use the tools use it only if you needed but if you know the answer just answer dircetly, NOTE Always give answer to the user either using the RAG or your base knowledge don't ever say you don't you have to always give answer for the user in the language he talked to you with"""
 
     llm = MainLLM(api_key=llm_config["api_key"], model=llm_config["model"], temperature=0.7)
     prompt = ReActPrompt(text=text)
